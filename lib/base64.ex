@@ -8,6 +8,16 @@ defmodule Base64 do
   @source_chunk_size 3
 
   @doc """
+  Encode binary file using base64
+  """
+  def encode_file(input_path, output_path) do
+    input_path
+    |> read_file()
+    |> encode()
+    |> write_file(output_path)
+  end
+
+  @doc """
   Encode binary data as ASCII text
 
   ## Examples
@@ -22,12 +32,12 @@ defmodule Base64 do
       "TWFu"
 
   """
-  def encode(file_path) do
-    {data, n_padding} = file_path
-      |> read_file()
-      |> read_data()
-      |> ensure_size()
+  def encode(data) do
+    {data, n_padding} = ensure_size(data)
+    do_encode(data, n_padding)
+  end
 
+  defp do_encode(data, n_padding) do
     data
     |> chunk_by(6)
     |> convert_to_ascii(n_padding)
@@ -35,7 +45,7 @@ defmodule Base64 do
 
   defp convert_to_ascii(sixtets, n_padding) do
     result = sixtets
-      |> Enum.map(&Base64.table_lookup/1)
+      |> Enum.map(&table_lookup/1)
       |> Enum.join("")
 
     result <> String.duplicate(@pad, n_padding)
@@ -58,16 +68,17 @@ defmodule Base64 do
     end
   end
 
+  defp write_file(data, path) do
+    with {:ok, file_handle} <- File.open(path, [:write]) do
+      file_handle
+      |> IO.binwrite(data)
+    end
+  end
+
   defp read_file(path) do
-    File.open(path)
-  end
-
-  defp read_data({:ok, file_handle}) do
-    file_handle
-    |> IO.binread(:all)
-  end
-
-  defp read_data({:error, _}) do
-    ""
+    with {:ok, file_handle} <- File.open(path) do
+      file_handle
+      |> IO.binread(:all)
+    end
   end
 end
