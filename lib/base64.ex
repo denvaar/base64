@@ -7,6 +7,48 @@ defmodule Base64 do
   @pad "="
   @source_chunk_size 3
 
+
+  @doc """
+  Decode ASCII text back to binary data
+
+  ## Examples
+
+      iex> Base64.decode("TWFu")
+      "Man"
+
+      iex> Base64.decode("TWFuTQ==")
+      "ManM"
+  """
+  def decode(data) do
+    data
+    |> String.graphemes()
+    |> Enum.map(fn(char) -> String.graphemes(@base64_table) |> Enum.find_index(fn(c) -> c == char end) end)
+    |> Enum.reject(fn(sixtet) -> !sixtet end)
+    |> Enum.chunk_every(4)
+    |> Enum.map(&chunker/1)
+    |> Enum.map(&matcher/1)
+    |> Enum.join(<<>>)
+  end
+
+  defp chunker(chunk) do
+    chunk
+    |> Enum.reduce(<<>>, fn(sixtet, acc) -> << acc::bitstring, <<sixtet::6>>::bitstring >> end)
+  end
+
+  defp matcher(bits) when bit_size(bits) == 24 do
+    bits
+  end
+
+  defp matcher(bits) when bit_size(bits) == 18 do
+    <<x::8, y::8, remaining::bitstring>> = bits
+    <<x, y>>
+  end
+
+  defp matcher(bits) when bit_size(bits) == 12 do
+    <<x::8, remaining::bitstring>> = bits
+    <<x>>
+  end
+
   @doc """
   Encode binary file using base64
   """
