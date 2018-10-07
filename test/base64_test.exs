@@ -4,12 +4,15 @@ defmodule Base64Test do
 
   test "encodes binary data" do
     assert Base64.encode("hello") == "aGVsbG8="
+    assert Base64.encode("any carnal pleasure.") == "YW55IGNhcm5hbCBwbGVhc3VyZS4="
+    assert Base64.encode("any carnal pleasure") == "YW55IGNhcm5hbCBwbGVhc3VyZQ=="
+    assert Base64.encode("any carnal pleasur") == "YW55IGNhcm5hbCBwbGVhc3Vy"
   end
 
-  test "encodes and decodes back" do
-    original = "Denver Paul Smith"
-    encoded = "RGVudmVyIFBhdWwgU21pdGg="
-    assert Base64.encode(original) == encoded
-    assert Base64.decode(encoded) == original
+  test "decodes binary data" do
+    assert Base64.decode("aGVsbG8=") == "hello"
+    assert Base64.decode("YW55IGNhcm5hbCBwbGVhc3VyZS4=") == "any carnal pleasure."
+    assert Base64.decode("YW55IGNhcm5hbCBwbGVhc3VyZQ==") == "any carnal pleasure"
+    assert Base64.decode("YW55IGNhcm5hbCBwbGVhc3Vy") == "any carnal pleasur"
   end
 end
