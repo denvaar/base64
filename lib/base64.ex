@@ -37,29 +37,38 @@ defmodule Base64 do
   def decode(data) do
     graphemes = String.graphemes(data)
     n_bytes = calc_binary_size(graphemes)
-    sixtets = graphemes
-      |> find_indicies()
-      |> change_to_sixtets()
 
-    <<decoded_data::size(n_bytes)-binary-unit(8), _junk::bitstring>> = sixtets
+    graphemes
+    |> find_indicies()
+    |> change_to_sixtets()
+    |> extract_binary_data(n_bytes)
+  end
 
+  @spec extract_binary_data(bitstring(), arity()) :: bitstring()
+  defp extract_binary_data(bits, n_bytes) do
+    <<decoded_data::size(n_bytes)-binary-unit(8), _junk::bitstring>> = bits
     decoded_data
   end
 
+  @spec change_to_sixtets(list()) :: bitstring()
+  defp change_to_sixtets(indicies) do
+    (for x <- indicies, do: <<x::6>>)
+    |> :erlang.list_to_bitstring()
+  end
+
+  @spec calc_binary_size(list()) :: arity()
   defp calc_binary_size(characters) do
     div(3 * length(characters), 4) - n_padding(characters)
   end
 
-  defp n_padding(characters), do: Enum.count(characters, &(&1 == "="))
+  @spec n_padding(list()) :: arity()
+  defp n_padding(characters), do: Enum.count(characters, &(&1 == @pad))
 
+  @spec find_indicies(list()) :: list()
   defp find_indicies(letters) do
-    Enum.map(letters, fn(char) -> Enum.find_index(@base64_table, &(&1 == char)) end)
-  end
-
-  defp change_to_sixtets(indicies) do
-    indicies
+    letters
+    |> Enum.map(fn(char) -> Enum.find_index(@base64_table, &(&1 == char)) end)
     |> Enum.reject(&(!&1))
-    |> List.foldr(<<>>, fn(sixtet, acc) -> << <<sixtet::6>>::bitstring, acc::bitstring >> end)
   end
 
   @doc """
