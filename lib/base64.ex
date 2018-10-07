@@ -7,6 +7,16 @@ defmodule Base64 do
   @pad "="
   @source_chunk_size 3
 
+  @doc """
+  Decode ASCII file using base64
+  """
+  @spec decode_file(binary(), binary()) :: :ok | {:error, term()}
+  def decode_file(input_path, output_path) do
+    input_path
+    |> read_file()
+    |> decode()
+    |> write_file(output_path)
+  end
 
   @doc """
   Decode ASCII text back to binary data
@@ -132,4 +142,34 @@ defmodule Base64 do
       |> IO.binread(:all)
     end
   end
+end
+
+defmodule Base64.CLI do
+  def main(args \\ []) do
+    args
+    |> parse_args
+    |> response
+  end
+
+  defp parse_args(args) do
+    {opts, word, _} =
+      args
+      |> OptionParser.parse(switches: [encode: :boolean, decode: :boolean])
+    {opts, word}
+  end
+
+  defp usage() do
+    IO.puts("""
+Usage: ./base64 [--encode|--decode] [infile] [outfile]\
+""")
+  end
+
+  defp response({opts, word}) do
+    case {opts, word} do
+      {[encode: true], [i, o]} -> Base64.encode_file(i, o)
+      {[decode: true], [i, o]} -> Base64.decode_file(i, o)
+      _ -> usage()
+    end
+  end
+
 end
