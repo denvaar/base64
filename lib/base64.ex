@@ -52,8 +52,7 @@ defmodule Base64 do
 
   @spec change_to_sixtets(list()) :: bitstring()
   defp change_to_sixtets(indicies) do
-    (for x <- indicies, do: <<x::6>>)
-    |> :erlang.list_to_bitstring()
+    for x <- indicies, do: <<x::6>>, into: <<>>
   end
 
   @spec calc_binary_size(list()) :: arity()
