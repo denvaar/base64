@@ -3,10 +3,21 @@ defmodule Base64 do
   Encode and decode binary data with base64.
   """
 
-  @base64_table "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  @base64_table ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"]
   @pad "="
   @source_chunk_size 3
 
+
+  @doc """
+  Decode a base64-encoded file back to original binary content
+  """
+  @spec decode_file(binary(), binary()) :: :ok | {:error, term()}
+  def decode_file(input_path, output_path) do
+    input_path
+    |> read_file()
+    |> decode()
+    |> write_file(output_path)
+  end
 
   @doc """
   Decode ASCII text back to binary data
@@ -18,35 +29,37 @@ defmodule Base64 do
 
       iex> Base64.decode("TWFuTQ==")
       "ManM"
+
+      iex> Base64.decode("TQ==")
+      "M"
   """
+  @spec decode(binary()) :: binary()
   def decode(data) do
-    data
-    |> String.graphemes()
-    |> Enum.map(fn(char) -> String.graphemes(@base64_table) |> Enum.find_index(fn(c) -> c == char end) end)
-    |> Enum.reject(fn(sixtet) -> !sixtet end)
-    |> Enum.chunk_every(4)
-    |> Enum.map(&chunker/1)
-    |> Enum.map(&matcher/1)
-    |> Enum.join(<<>>)
+    graphemes = String.graphemes(data)
+    n_bytes = calc_binary_size(graphemes)
+    sixtets = graphemes
+      |> find_indicies()
+      |> change_to_sixtets()
+
+    <<decoded_data::size(n_bytes)-binary-unit(8), _junk::bitstring>> = sixtets
+
+    decoded_data
   end
 
-  defp chunker(chunk) do
-    chunk
-    |> Enum.reduce(<<>>, fn(sixtet, acc) -> << acc::bitstring, <<sixtet::6>>::bitstring >> end)
+  defp calc_binary_size(characters) do
+    div(3 * length(characters), 4) - n_padding(characters)
   end
 
-  defp matcher(bits) when bit_size(bits) == 24 do
-    bits
+  defp n_padding(characters), do: Enum.count(characters, &(&1 == "="))
+
+  defp find_indicies(letters) do
+    Enum.map(letters, fn(char) -> Enum.find_index(@base64_table, &(&1 == char)) end)
   end
 
-  defp matcher(bits) when bit_size(bits) == 18 do
-    <<x::8, y::8, remaining::bitstring>> = bits
-    <<x, y>>
-  end
-
-  defp matcher(bits) when bit_size(bits) == 12 do
-    <<x::8, remaining::bitstring>> = bits
-    <<x>>
+  defp change_to_sixtets(indicies) do
+    indicies
+    |> Enum.reject(&(!&1))
+    |> List.foldr(<<>>, fn(sixtet, acc) -> << <<sixtet::6>>::bitstring, acc::bitstring >> end)
   end
 
   @doc """
@@ -98,7 +111,7 @@ defmodule Base64 do
   end
 
   @spec table_lookup(<<_::6>>) :: binary() | nil
-  defp table_lookup(<<sixtet_value::6>>), do: String.at(@base64_table, sixtet_value)
+  defp table_lookup(<<sixtet_value::6>>), do: Enum.at(@base64_table, sixtet_value)
 
   @spec chunk_by(bitstring(), 6) :: [<<_::6>>]
   defp chunk_by(data, n_chunk) do
