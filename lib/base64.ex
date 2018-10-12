@@ -61,7 +61,7 @@ defmodule Base64 do
   end
 
   @spec n_padding(list()) :: arity()
-  defp n_padding(characters), do: Enum.count(characters, &(&1 == @pad))
+  defp n_padding(characters), do: (Enum.take(characters, -4) |> Enum.count(&(&1 == @pad)))
 
   @spec find_indicies(list()) :: list()
   defp find_indicies(letters) do
