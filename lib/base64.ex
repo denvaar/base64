@@ -3,7 +3,7 @@ defmodule Base64 do
   Encode and decode binary data with base64.
   """
 
-  @base64_table Enum.with_index(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"]) |> Map.new
+  @base64_table ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"]
   @pad "="
   @source_chunk_size 3
 
@@ -37,9 +37,12 @@ defmodule Base64 do
   def decode(data) do
     graphemes = String.replace(data, ~r/[\t\n\r ]+/, "", global: true) |> String.graphemes
     n_bytes = calc_binary_size(graphemes)
+    table = @base64_table
+      |> Enum.with_index()
+      |> Map.new()
 
     graphemes
-    |> find_indicies()
+    |> find_indicies(table)
     |> change_to_sixtets()
     |> extract_binary_data(n_bytes)
   end
@@ -63,10 +66,10 @@ defmodule Base64 do
   @spec n_padding(list()) :: arity()
   defp n_padding(characters), do: (Enum.take(characters, -4) |> Enum.count(&(&1 == @pad)))
 
-  @spec find_indicies(list()) :: list()
-  defp find_indicies(letters) do
+  @spec find_indicies(list(), list()) :: list()
+  defp find_indicies(letters, table) do
     letters
-    |> Enum.map(fn(char) -> Map.get(@base64_table, char) end)
+    |> Enum.map(fn(char) -> Map.get(table, char) end)
     |> Enum.reject(&(!&1))
   end
 
