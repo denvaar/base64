@@ -35,7 +35,7 @@ defmodule Base64 do
   """
   @spec decode(binary()) :: binary()
   def decode(data) do
-    graphemes = String.graphemes(data)
+    graphemes = String.replace(data, ~r/[\t\n\r ]+/, "", global: true) |> String.graphemes
     n_bytes = calc_binary_size(graphemes)
 
     graphemes
