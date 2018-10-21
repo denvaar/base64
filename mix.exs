@@ -7,7 +7,8 @@ defmodule Base64.MixProject do
       version: "0.1.0",
       elixir: "~> 1.7.3",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      escript: escript(),
     ]
   end
 
@@ -23,6 +24,12 @@ defmodule Base64.MixProject do
     [
       {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
       {:exprof, "~> 0.2.0"}
+    ]
+  end
+
+  defp escript do
+    [
+      main_module: Base64.CLI
     ]
   end
 end
