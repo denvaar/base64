@@ -64,13 +64,13 @@ defmodule Base64 do
   end
 
   @spec n_padding(list()) :: arity()
-  defp n_padding(characters), do: (Enum.take(characters, -4) |> Enum.count(&(&1 == @pad)))
+  defp n_padding(characters), do: (Stream.take(characters, -4) |> Enum.count(&(&1 == @pad)))
 
   @spec find_indicies(list(), list()) :: list()
   defp find_indicies(letters, table) do
     letters
-    |> Enum.map(fn(char) -> Map.get(table, char) end)
-    |> Enum.reject(&(!&1))
+    |> Stream.map(fn(char) -> Map.get(table, char) end)
+    |> Stream.reject(&(!&1))
   end
 
   @doc """
@@ -115,7 +115,7 @@ defmodule Base64 do
   @spec convert_to_ascii([<<_::6>>], non_neg_integer()) :: binary()
   defp convert_to_ascii(sixtets, n_padding) do
     result = sixtets
-      |> Enum.map(&table_lookup/1)
+      |> Stream.map(&table_lookup/1)
       |> Enum.join("")
 
     result <> String.duplicate(@pad, n_padding)
