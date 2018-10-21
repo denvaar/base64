@@ -3,10 +3,9 @@ defmodule Base64 do
   Encode and decode binary data with base64.
   """
 
-  @base64_table ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "/"]
+  @base64_table ~w(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z 0 1 2 3 4 5 6 7 8 9 + /)
   @pad "="
   @source_chunk_size 3
-
 
   @doc """
   Decode a base64-encoded file back to original binary content
@@ -35,9 +34,11 @@ defmodule Base64 do
   """
   @spec decode(binary()) :: binary()
   def decode(data) do
-    graphemes = String.replace(data, ~r/[\t\n\r ]+/, "", global: true) |> String.graphemes
+    graphemes = String.replace(data, ~r/[\t\n\r ]+/, "", global: true) |> String.graphemes()
     n_bytes = calc_binary_size(graphemes)
-    table = @base64_table
+
+    table =
+      @base64_table
       |> Enum.with_index()
       |> Map.new()
 
@@ -64,12 +65,12 @@ defmodule Base64 do
   end
 
   @spec n_padding(list()) :: arity()
-  defp n_padding(characters), do: (Stream.take(characters, -4) |> Enum.count(&(&1 == @pad)))
+  defp n_padding(characters), do: Stream.take(characters, -4) |> Enum.count(&(&1 == @pad))
 
   @spec find_indicies(list(), list()) :: list()
   defp find_indicies(letters, table) do
     letters
-    |> Stream.map(fn(char) -> Map.get(table, char) end)
+    |> Stream.map(fn char -> Map.get(table, char) end)
     |> Stream.reject(&(!&1))
   end
 
@@ -114,7 +115,8 @@ defmodule Base64 do
 
   @spec convert_to_ascii([<<_::6>>], non_neg_integer()) :: binary()
   defp convert_to_ascii(sixtets, n_padding) do
-    result = sixtets
+    result =
+      sixtets
       |> Stream.map(&table_lookup/1)
       |> Enum.join("")
 
@@ -126,7 +128,7 @@ defmodule Base64 do
 
   @spec chunk_by(bitstring(), 6) :: [<<_::6>>]
   defp chunk_by(data, n_chunk) do
-    for << c::size(n_chunk) <- data >>, do: <<c::size(n_chunk)>>
+    for <<c::size(n_chunk) <- data>>, do: <<c::size(n_chunk)>>
   end
 
   @spec ensure_size(bitstring()) :: {bitstring(), integer()}
@@ -137,7 +139,7 @@ defmodule Base64 do
     if n_padding == 0 do
       {data, n_padding}
     else
-      {<< data::bits, <<0::size(x)>> >>, n_padding}
+      {<<data::bits, (<<0::size(x)>>)>>, n_padding}
     end
   end
 
@@ -149,7 +151,8 @@ defmodule Base64 do
     end
   end
 
-  @spec read_file(binary()) :: :eof | binary() | [byte()] | {:error, atom() | {:no_translation, :unicode, :latin1}}
+  @spec read_file(binary()) ::
+          :eof | binary() | [byte()] | {:error, atom() | {:no_translation, :unicode, :latin1}}
   defp read_file(path) do
     with {:ok, file_handle} <- File.open(path) do
       file_handle
